@@ -3,27 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Касса</title>
+    <title>Касса X2</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background: #f4f4f4; padding: 20px; }
-        .container { background: white; padding: 20px; max-width: 400px; margin: auto; box-shadow: 0 0 10px gray; border-radius: 10px; }
-        input, button, select { margin: 5px; padding: 10px; width: 90%; }
-        #cart { text-align: left; margin-top: 20px; }
-        .receipt { display: none; background: white; padding: 10px; border: 1px solid black; width: 300px; margin: auto; }
+        body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
+        .container { width: 90%; margin: auto; background: white; padding: 20px; box-shadow: 0 0 10px gray; border-radius: 10px; }
+        .header { display: flex; justify-content: space-between; padding: 10px; background: #2d3e50; color: white; }
+        .cart { border-top: 1px solid gray; padding-top: 10px; }
+        .buttons { display: flex; justify-content: space-between; margin-top: 20px; }
+        button { padding: 10px; font-size: 16px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Онлайн-касса</h2>
-    
-    <h3>Сканер штрих-кодов</h3>
+    <div class="header">
+        <h2>X2 Касса</h2>
+        <div>Баланс: <span id="balance">56 750,00 Т</span></div>
+        <button onclick="logout()">Выход</button>
+    </div>
+
+    <h3>Поиск товара</h3>
     <input type="text" id="barcode" placeholder="Введите штрих-код">
     <button onclick="scan()">Сканировать</button>
 
-    <h3>Выбор скидки</h3>
-    <input type="number" id="discount" placeholder="Скидка (%)">
-    <button onclick="setDiscount()">Применить</button>
+    <h3>Товары</h3>
+    <div id="categories">
+        <button onclick="showCategory('Товары без группы')">Товары без группы</button>
+        <button onclick="showCategory('Разливные напитки')">Разливные напитки</button>
+    </div>
+
+    <div id="cart" class="cart">
+        <h3>Корзина</h3>
+        <p>Нет товаров</p>
+    </div>
 
     <h3>Выбор оплаты</h3>
     <select id="paymentMethod">
@@ -32,17 +44,16 @@
     </select>
     <button onclick="setPayment()">Выбрать</button>
 
-    <h3>Корзина</h3>
-    <div id="cart"></div>
+    <h3>Скидка</h3>
+    <input type="number" id="discount" placeholder="Скидка (%)">
+    <button onclick="setDiscount()">Применить</button>
 
-    <button onclick="checkout()">Оплатить</button>
-</div>
-
-<!-- Чек -->
-<div id="receipt" class="receipt">
-    <h3>Чек</h3>
-    <div id="receiptDetails"></div>
-    <button onclick="printReceipt()">Распечатать</button>
+    <div class="buttons">
+        <button style="background: green; color: white;" onclick="checkout()">Оплатить</button>
+        <button style="background: red; color: white;">Отмена</button>
+        <button style="background: orange; color: white;">Отложено</button>
+        <button style="background: blue; color: white;" onclick="printReceipt()">Печать чека</button>
+    </div>
 </div>
 
 <script>
@@ -78,22 +89,11 @@
     async function checkout() {
         let response = await fetch("/checkout", { method: "POST" });
         let result = await response.json();
-        let receiptText = "Чек:\n";
-        result.items.forEach(item => {
-            receiptText += `${item[0]} - ${item[1]} руб.\n`;
-        });
-        receiptText += `\nИтого: ${result.total} руб.\nОплата: ${result.payment}`;
-
-        document.getElementById("receiptDetails").innerText = receiptText;
-        document.getElementById("receipt").style.display = "block";
+        alert("Чек:\n" + JSON.stringify(result, null, 2));
     }
 
     function printReceipt() {
-        let receiptContent = document.getElementById("receipt").innerHTML;
-        let win = window.open('', '', 'width=400,height=400');
-        win.document.write(receiptContent);
-        win.document.close();
-        win.print();
+        window.print();
     }
 </script>
 
