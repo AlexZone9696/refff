@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Касса</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        input, button { margin: 5px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Касса</h1>
+    
+    <h3>Добавить товар</h3>
+    <input type="text" id="itemName" placeholder="Название">
+    <input type="number" id="itemPrice" placeholder="Цена">
+    <button onclick="addItem()">Добавить</button>
+
+    <h3>Удалить товар</h3>
+    <input type="text" id="removeName" placeholder="Название">
+    <button onclick="removeItem()">Удалить</button>
+
+    <h3>Установить скидку</h3>
+    <input type="number" id="discount" placeholder="Скидка (%)">
+    <button onclick="setDiscount()">Применить</button>
+
+    <h3>Рассчитать сумму</h3>
+    <button onclick="checkout()">Оплатить</button>
+
+    <h3 id="message"></h3>
+
+    <script>
+        async function addItem() {
+            let name = document.getElementById("itemName").value;
+            let price = parseFloat(document.getElementById("itemPrice").value);
+            let response = await fetch("/add_item", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, price })
+            });
+            let result = await response.json();
+            document.getElementById("message").innerText = result.message || result.error;
+        }
+
+        async function removeItem() {
+            let name = document.getElementById("removeName").value;
+            let response = await fetch("/remove_item", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name })
+            });
+            let result = await response.json();
+            document.getElementById("message").innerText = result.message || result.error;
+        }
+
+        async function setDiscount() {
+            let discount = parseFloat(document.getElementById("discount").value);
+            let response = await fetch("/set_discount", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ discount })
+            });
+            let result = await response.json();
+            document.getElementById("message").innerText = result.message;
+        }
+
+        async function checkout() {
+            let response = await fetch("/checkout", { method: "POST" });
+            let result = await response.json();
+            document.getElementById("message").innerText = `Итого: ${result.total} руб.`;
+        }
+    </script>
+</body>
+</html>
