@@ -2,31 +2,31 @@ from flask import Flask, request, jsonify, render_template
 
 app = Flask(__name__)
 
-items = []
+# Товары (штрих-код: (название, цена))
+PRODUCTS = {
+    "123456": ("Хлеб", 50),
+    "654321": ("Молоко", 80),
+    "111222": ("Шоколад", 120),
+    "333444": ("Кофе", 250),
+    "555666": ("Чай", 150)
+}
+
+cart = []
 discount = 0  # Скидка в %
+payment_method = ""
 
 @app.route('/')
 def home():
-    return render_template("index.html")  # Отображение главной страницы
+    return render_template("index.html")
 
-@app.route('/add_item', methods=['POST'])
-def add_item():
+@app.route('/scan', methods=['POST'])
+def scan():
     data = request.json
-    name = data.get("name")
-    price = data.get("price")
-    if name and price:
-        items.append((name, price))
-        return jsonify({"message": f"Добавлен: {name} - {price:.2f} руб."})
-    return jsonify({"error": "Неверные данные"}), 400
-
-@app.route('/remove_item', methods=['POST'])
-def remove_item():
-    data = request.json
-    name = data.get("name")
-    for item in items:
-        if item[0] == name:
-            items.remove(item)
-            return jsonify({"message": f"Удалено: {name}"})
+    barcode = data.get("barcode")
+    if barcode in PRODUCTS:
+        name, price = PRODUCTS[barcode]
+        cart.append((name, price))
+        return jsonify({"message": f"Добавлен: {name} - {price} руб.", "cart": cart})
     return jsonify({"error": "Товар не найден"}), 404
 
 @app.route('/set_discount', methods=['POST'])
@@ -36,12 +36,20 @@ def set_discount():
     discount = data.get("discount", 0)
     return jsonify({"message": f"Скидка установлена: {discount}%"})
 
+@app.route('/set_payment', methods=['POST'])
+def set_payment():
+    global payment_method
+    data = request.json
+    payment_method = data.get("method")
+    return jsonify({"message": f"Выбран способ оплаты: {payment_method}"})
+
 @app.route('/checkout', methods=['POST'])
 def checkout():
-    global items, discount
-    total = sum(price for _, price in items) * (1 - discount / 100)
-    items.clear()  # Очистка чека
-    return jsonify({"total": round(total, 2), "message": "Оплата прошла"})
+    global cart, discount, payment_method
+    total = sum(price for _, price in cart) * (1 - discount / 100)
+    receipt = {"items": cart, "total": round(total, 2), "payment": payment_method}
+    cart.clear()  # Очистка корзины
+    return jsonify(receipt)
 
 if __name__ == "__main__":
     app.run(debug=True)
