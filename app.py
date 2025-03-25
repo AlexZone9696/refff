@@ -1,14 +1,14 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
 
-# Товары (штрих-код: (название, цена))
+# Товары (штрих-код: (название, цена, категория))
 PRODUCTS = {
-    "123456": ("Хлеб", 50),
-    "654321": ("Молоко", 80),
-    "111222": ("Шоколад", 120),
-    "333444": ("Кофе", 250),
-    "555666": ("Чай", 150)
+    "123456": ("Хлеб", 50, "Товары без группы"),
+    "654321": ("Молоко", 80, "Товары без группы"),
+    "111222": ("Шоколад", 120, "Товары без группы"),
+    "333444": ("Кофе", 250, "Разливные напитки"),
+    "555666": ("Чай", 150, "Разливные напитки")
 }
 
 cart = []
@@ -17,14 +17,14 @@ payment_method = ""
 
 @app.route('/')
 def home():
-    return render_template("index.html")
+    return render_template("index.html", products=PRODUCTS)
 
 @app.route('/scan', methods=['POST'])
 def scan():
     data = request.json
     barcode = data.get("barcode")
     if barcode in PRODUCTS:
-        name, price = PRODUCTS[barcode]
+        name, price, category = PRODUCTS[barcode]
         cart.append((name, price))
         return jsonify({"message": f"Добавлен: {name} - {price} руб.", "cart": cart})
     return jsonify({"error": "Товар не найден"}), 404
