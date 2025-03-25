@@ -5,71 +5,97 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Касса</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        input, button { margin: 5px; padding: 10px; }
+        body { font-family: Arial, sans-serif; text-align: center; background: #f4f4f4; padding: 20px; }
+        .container { background: white; padding: 20px; max-width: 400px; margin: auto; box-shadow: 0 0 10px gray; border-radius: 10px; }
+        input, button, select { margin: 5px; padding: 10px; width: 90%; }
+        #cart { text-align: left; margin-top: 20px; }
+        .receipt { display: none; background: white; padding: 10px; border: 1px solid black; width: 300px; margin: auto; }
     </style>
 </head>
 <body>
-    <h1>Касса</h1>
+
+<div class="container">
+    <h2>Онлайн-касса</h2>
     
-    <h3>Добавить товар</h3>
-    <input type="text" id="itemName" placeholder="Название">
-    <input type="number" id="itemPrice" placeholder="Цена">
-    <button onclick="addItem()">Добавить</button>
+    <h3>Сканер штрих-кодов</h3>
+    <input type="text" id="barcode" placeholder="Введите штрих-код">
+    <button onclick="scan()">Сканировать</button>
 
-    <h3>Удалить товар</h3>
-    <input type="text" id="removeName" placeholder="Название">
-    <button onclick="removeItem()">Удалить</button>
-
-    <h3>Установить скидку</h3>
+    <h3>Выбор скидки</h3>
     <input type="number" id="discount" placeholder="Скидка (%)">
     <button onclick="setDiscount()">Применить</button>
 
-    <h3>Рассчитать сумму</h3>
+    <h3>Выбор оплаты</h3>
+    <select id="paymentMethod">
+        <option value="Наличные">Наличные</option>
+        <option value="Карта">Карта</option>
+    </select>
+    <button onclick="setPayment()">Выбрать</button>
+
+    <h3>Корзина</h3>
+    <div id="cart"></div>
+
     <button onclick="checkout()">Оплатить</button>
+</div>
 
-    <h3 id="message"></h3>
+<!-- Чек -->
+<div id="receipt" class="receipt">
+    <h3>Чек</h3>
+    <div id="receiptDetails"></div>
+    <button onclick="printReceipt()">Распечатать</button>
+</div>
 
-    <script>
-        async function addItem() {
-            let name = document.getElementById("itemName").value;
-            let price = parseFloat(document.getElementById("itemPrice").value);
-            let response = await fetch("/add_item", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, price })
-            });
-            let result = await response.json();
-            document.getElementById("message").innerText = result.message || result.error;
-        }
+<script>
+    async function scan() {
+        let barcode = document.getElementById("barcode").value;
+        let response = await fetch("/scan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ barcode })
+        });
+        let result = await response.json();
+        document.getElementById("cart").innerText += result.message + "\n";
+    }
 
-        async function removeItem() {
-            let name = document.getElementById("removeName").value;
-            let response = await fetch("/remove_item", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name })
-            });
-            let result = await response.json();
-            document.getElementById("message").innerText = result.message || result.error;
-        }
+    async function setDiscount() {
+        let discount = document.getElementById("discount").value;
+        await fetch("/set_discount", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ discount })
+        });
+    }
 
-        async function setDiscount() {
-            let discount = parseFloat(document.getElementById("discount").value);
-            let response = await fetch("/set_discount", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ discount })
-            });
-            let result = await response.json();
-            document.getElementById("message").innerText = result.message;
-        }
+    async function setPayment() {
+        let method = document.getElementById("paymentMethod").value;
+        await fetch("/set_payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ method })
+        });
+    }
 
-        async function checkout() {
-            let response = await fetch("/checkout", { method: "POST" });
-            let result = await response.json();
-            document.getElementById("message").innerText = `Итого: ${result.total} руб.`;
-        }
-    </script>
+    async function checkout() {
+        let response = await fetch("/checkout", { method: "POST" });
+        let result = await response.json();
+        let receiptText = "Чек:\n";
+        result.items.forEach(item => {
+            receiptText += `${item[0]} - ${item[1]} руб.\n`;
+        });
+        receiptText += `\nИтого: ${result.total} руб.\nОплата: ${result.payment}`;
+
+        document.getElementById("receiptDetails").innerText = receiptText;
+        document.getElementById("receipt").style.display = "block";
+    }
+
+    function printReceipt() {
+        let receiptContent = document.getElementById("receipt").innerHTML;
+        let win = window.open('', '', 'width=400,height=400');
+        win.document.write(receiptContent);
+        win.document.close();
+        win.print();
+    }
+</script>
+
 </body>
 </html>
